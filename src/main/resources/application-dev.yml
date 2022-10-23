@@ -1,0 +1,11 @@
+spring:
+  config:
+    import:
+    - 'configserver:'
+  cloud:
+    config:
+      discovery:
+        service-id: config-server-ms
+      username: cs
+      password: '12345'
+
