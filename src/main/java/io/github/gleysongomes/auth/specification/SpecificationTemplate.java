@@ -2,6 +2,7 @@ package io.github.gleysongomes.auth.specification;
 
 import org.springframework.data.jpa.domain.Specification;
 
+import io.github.gleysongomes.auth.model.Papel;
 import io.github.gleysongomes.auth.model.Usuario;
 import net.kaczmarzyk.spring.data.jpa.domain.Equal;
 import net.kaczmarzyk.spring.data.jpa.domain.Like;
@@ -17,6 +18,13 @@ public class SpecificationTemplate {
 		@Spec(path = "statusUsuario", spec = Equal.class)
 	})
 	public interface UsuarioSpec extends Specification<Usuario> {
+	}
+
+	@And({
+		@Spec(path = "nome", spec = Like.class),
+		@Spec(path = "flAtivo", spec = Equal.class)
+	})
+	public interface PapelSpec extends Specification<Papel> {
 	}
 
 }
