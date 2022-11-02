@@ -30,9 +30,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonView;
 
+import io.github.gleysongomes.auth.dto.PapelUsuarioDto;
 import io.github.gleysongomes.auth.dto.UsuarioDto;
 import io.github.gleysongomes.auth.enums.StatusUsuario;
+import io.github.gleysongomes.auth.model.Papel;
+import io.github.gleysongomes.auth.model.PapelUsuario;
 import io.github.gleysongomes.auth.model.Usuario;
+import io.github.gleysongomes.auth.service.PapelService;
+import io.github.gleysongomes.auth.service.PapelUsuarioService;
 import io.github.gleysongomes.auth.service.UsuarioService;
 import io.github.gleysongomes.auth.specification.SpecificationTemplate;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +50,12 @@ public class UsuarioController {
 
 	@Autowired
 	private UsuarioService usuarioService;
+
+	@Autowired
+	private PapelService papelService;
+
+	@Autowired
+	private PapelUsuarioService papelUsuarioService;
 
 	@GetMapping
 	public ResponseEntity<Page<Usuario>> listar(SpecificationTemplate.UsuarioSpec usuarioSpec,
@@ -146,6 +157,104 @@ public class UsuarioController {
 			usuarioService.excluir(usuarioOptional.get());
 			log.debug("Usuário excluído com sucesso: {}", cdUsuario);
 			return ResponseEntity.status(HttpStatus.OK).body("Usuário excluído com sucesso.");
+		}
+	}
+
+	@PostMapping("/{cdUsuario}/papeis")
+	public ResponseEntity<Object> vincular(@PathVariable(value = "cdUsuario") UUID cdUsuario,
+			@RequestBody @Validated(PapelUsuarioDto.PapelUsuarioView.PapelUsuarioPost.class) @JsonView(PapelUsuarioDto.PapelUsuarioView.PapelUsuarioPost.class) PapelUsuarioDto papelUsuarioDto) {
+		log.debug("Vincular papel ao usuário: {} - {}", papelUsuarioDto.getCdPapel(), cdUsuario);
+		if (papelUsuarioService.existsByCdPapelAndCdUsuario(papelUsuarioDto.getCdPapel(), cdUsuario)) {
+			log.debug("Esse papel já está vinculado a esse usuário: {}", papelUsuarioDto.getCdPapel(), cdUsuario);
+			return ResponseEntity.status(HttpStatus.CONFLICT).body("Esse papel já está vinculado a esse usuário.");
+		}
+		Optional<Papel> papelOptional = papelService.buscar(papelUsuarioDto.getCdPapel());
+		if (!papelOptional.isPresent()) {
+			log.debug("Papel não encontrado: {}", papelUsuarioDto.getCdPapel());
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Papel não encontrado.");
+		}
+		Optional<Usuario> usuarioOptional = usuarioService.buscar(cdUsuario);
+		if (!usuarioOptional.isPresent()) {
+			log.debug("Usuário não encontrado: {}", papelUsuarioDto.getCdPapel());
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuário não encontrado.");
+		} else {
+			var papelUsuario = new PapelUsuario();
+			papelUsuario.setFlAtivo(Boolean.TRUE);
+			papelUsuario.setDtCadastro(LocalDateTime.now(ZoneId.of("UTC")));
+			papelUsuario.setPapel(papelOptional.get());
+			papelUsuario.setUsuario(usuarioOptional.get());
+			papelUsuarioService.adicionar(papelUsuario);
+			log.debug("Papel vinculado ao usuário com sucesso: {} - {}", papelUsuarioDto.getCdPapel(), cdUsuario);
+			return ResponseEntity.status(HttpStatus.CREATED).body(papelUsuario);
+		}
+	}
+
+	@PutMapping("/{cdUsuario}/papeis")
+	public ResponseEntity<Object> atualizarVinculo(@PathVariable(value = "cdUsuario") UUID cdUsuario,
+			@RequestBody @Validated(PapelUsuarioDto.PapelUsuarioView.PapelUsuarioPut.class) @JsonView(PapelUsuarioDto.PapelUsuarioView.PapelUsuarioPut.class) PapelUsuarioDto papelUsuarioDto) {
+		log.debug("Atualizar vínculo do papel com usuário: {} - {}", papelUsuarioDto.getCdPapel(), cdUsuario);
+		Optional<PapelUsuario> papelUsuarioOptional = papelUsuarioService.buscar(papelUsuarioDto.getCdPapel(),
+				cdUsuario);
+		if (!papelUsuarioOptional.isPresent()) {
+			log.debug("Esse papel não está vinculado a esse usuário: {}", papelUsuarioDto.getCdPapel(), cdUsuario);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Esse papel não está vinculado a esse usuário.");
+		}
+		Optional<Papel> papelOptional = papelService.buscar(papelUsuarioDto.getCdPapel());
+		if (!papelOptional.isPresent()) {
+			log.debug("Papel não encontrado: {}", papelUsuarioDto.getCdPapel());
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Papel não encontrado.");
+		}
+		Optional<Usuario> usuarioOptional = usuarioService.buscar(cdUsuario);
+		if (!usuarioOptional.isPresent()) {
+			log.debug("Usuário não encontrado: {}", papelUsuarioDto.getCdPapel());
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuário não encontrado.");
+		} else {
+			var papelUsuario = papelUsuarioOptional.get();
+			papelUsuario.setFlAtivo(papelUsuarioDto.getFlAtivo());
+			papelUsuario.setDtAtualizacao(LocalDateTime.now(ZoneId.of("UTC")));
+			papelUsuarioService.atualizar(papelUsuario);
+			log.debug("Vinculo de papel com usuário foi atualizado com sucesso: {} - {}", papelUsuarioDto.getCdPapel(),
+					cdUsuario);
+			return ResponseEntity.status(HttpStatus.OK).body(papelUsuario);
+		}
+	}
+
+	@DeleteMapping("/{cdUsuario}/papeis/{cdPapel}")
+	public ResponseEntity<Object> excluirVinculo(@PathVariable(value = "cdUsuario") UUID cdUsuario,
+			@PathVariable(value = "cdPapel") UUID cdPapel) {
+		log.debug("Excluir vínculo do papel com usuário: {} - {}", cdPapel, cdUsuario);
+		Optional<PapelUsuario> papelUsuarioOptional = papelUsuarioService.buscar(cdPapel, cdUsuario);
+		if (!papelUsuarioOptional.isPresent()) {
+			log.debug("Esse papel não está vinculado a esse usuário: {}", cdPapel, cdUsuario);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Esse papel não está vinculado a esse usuário.");
+		}
+		Optional<Papel> papelOptional = papelService.buscar(cdPapel);
+		if (!papelOptional.isPresent()) {
+			log.debug("Papel não encontrado: {}", cdPapel);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Papel não encontrado.");
+		}
+		Optional<Usuario> usuarioOptional = usuarioService.buscar(cdUsuario);
+		if (!usuarioOptional.isPresent()) {
+			log.debug("Usuário não encontrado: {}", cdPapel);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuário não encontrado.");
+		} else {
+			papelUsuarioService.excluir(cdPapel, cdUsuario);
+			log.debug("Vinculo de papel com usuário foi excluído com sucesso: {} - {}", cdPapel, cdUsuario);
+			return ResponseEntity.status(HttpStatus.OK).body("Vinculo de papel com usuário foi excluído com sucesso.");
+		}
+	}
+
+	@GetMapping("/{cdUsuario}/papeis/{cdPapel}")
+	public ResponseEntity<Object> buscarVinculo(@PathVariable(value = "cdUsuario") UUID cdUsuario,
+			@PathVariable(value = "cdPapel") UUID cdPapel) {
+		log.debug("Buscar vínculo do papel com usuário: {} - {}", cdPapel, cdUsuario);
+		Optional<PapelUsuario> papelUsuarioOptional = papelUsuarioService.buscar(cdPapel, cdUsuario);
+		if (!papelUsuarioOptional.isPresent()) {
+			log.debug("Esse papel não está vinculado a esse usuário: {}", cdPapel, cdUsuario);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Esse papel não está vinculado a esse usuário.");
+		} else {
+			log.debug("Vínculo de papel com usuário foi encontrado com sucesso: {} - {}", cdPapel, cdUsuario);
+			return ResponseEntity.status(HttpStatus.OK).body(papelUsuarioOptional.get());
 		}
 	}
 

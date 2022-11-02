@@ -2,15 +2,21 @@ package io.github.gleysongomes.auth.model;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 
 import org.springframework.hateoas.RepresentationModel;
@@ -18,6 +24,7 @@ import org.springframework.hateoas.RepresentationModel;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.github.gleysongomes.auth.enums.StatusUsuario;
 import lombok.Data;
@@ -62,4 +69,9 @@ public class Usuario extends RepresentationModel<Usuario> implements Serializabl
 	@Column(name = "status_usuario", nullable = false, length = 30)
 	@Enumerated(EnumType.STRING)
 	private StatusUsuario statusUsuario;
+
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@ManyToMany(fetch = FetchType.LAZY)
+	@JoinTable(name = "tb_papel_usuario", joinColumns = @JoinColumn(name = "cd_usuario"), inverseJoinColumns = @JoinColumn(name = "cd_papel"))
+	private Set<Papel> papeis = new HashSet<>();
 }

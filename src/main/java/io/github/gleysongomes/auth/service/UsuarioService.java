@@ -26,4 +26,6 @@ public interface UsuarioService {
 	boolean existsByLogin(String login);
 
 	boolean existsByEmail(String email);
+
+	boolean existsByCdUsuario(UUID cdUsuario);
 }

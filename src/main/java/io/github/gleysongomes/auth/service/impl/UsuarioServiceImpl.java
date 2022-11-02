@@ -50,7 +50,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 	@Override
 	@Transactional(readOnly = true)
 	public Optional<Usuario> buscar(UUID cdUsuario) {
-		return usuarioRepository.findById(cdUsuario);
+		return usuarioRepository.findByCdUsuario(cdUsuario);
 	}
 
 	@Override
@@ -81,6 +81,12 @@ public class UsuarioServiceImpl implements UsuarioService {
 		BeanUtils.copyProperties(usuario, usuarioEventDto);
 		usuarioEventDto.setStatusUsuario(usuario.getStatusUsuario().toString());
 		return usuarioEventDto;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public boolean existsByCdUsuario(UUID cdUsuario) {
+		return usuarioRepository.existsByCdUsuario(cdUsuario);
 	}
 
 }
