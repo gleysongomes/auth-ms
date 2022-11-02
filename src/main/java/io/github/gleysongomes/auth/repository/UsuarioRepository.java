@@ -19,4 +19,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID>, JpaSpec
 
 	@EntityGraph(attributePaths = "papeis")
 	Optional<Usuario> findByCdUsuario(UUID cdUsuario);
+
+	Optional<Usuario> findByLogin(String login);
 }

@@ -25,6 +25,8 @@ public interface UsuarioService {
 
 	boolean existsByLogin(String login);
 
+	Optional<Usuario> findByLogin(String login);
+
 	boolean existsByEmail(String email);
 
 	boolean existsByCdUsuario(UUID cdUsuario);

@@ -26,6 +26,9 @@ public interface PapelRepository extends JpaRepository<Papel, UUID>, JpaSpecific
 	@Query(value = "select case when count(*) > 0 then true else false end from tb_papel p where p.nome = :nome", nativeQuery = true)
 	boolean existsByNome(@Param("nome") String nome);
 
+	@Query(value = "select * from tb_papel p where p.nome = :nome", nativeQuery = true)
+	Optional<Papel> findByNome(@Param("nome") String nome);
+
 	@Modifying
 	@Query(value = "update tb_papel p set nome = :#{#papel.nome}, fl_ativo = :#{#papel.flAtivo} where p.cd_papel = :#{#papel.cdPapel}", nativeQuery = true)
 	void atualizar(@Param("papel") Papel papel);

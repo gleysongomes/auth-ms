@@ -1,5 +1,7 @@
 package io.github.gleysongomes.auth.service.impl;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,10 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import io.github.gleysongomes.auth.dto.UsuarioEventDto;
 import io.github.gleysongomes.auth.enums.TipoAcao;
+import io.github.gleysongomes.auth.model.PapelUsuario;
 import io.github.gleysongomes.auth.model.Usuario;
 import io.github.gleysongomes.auth.publisher.UsuarioEventPublisher;
+import io.github.gleysongomes.auth.repository.PapelRepository;
+import io.github.gleysongomes.auth.repository.PapelUsuarioRepository;
 import io.github.gleysongomes.auth.repository.UsuarioRepository;
 import io.github.gleysongomes.auth.service.UsuarioService;
+import io.github.gleysongomes.auth.util.Constantes;
 
 @Service
 @Transactional
@@ -26,7 +32,13 @@ public class UsuarioServiceImpl implements UsuarioService {
 	private UsuarioRepository usuarioRepository;
 
 	@Autowired
+	private PapelRepository papelRepository;
+
+	@Autowired
 	private UsuarioEventPublisher usuarioEventPublisher;
+
+	@Autowired
+	private PapelUsuarioRepository papelUsuarioRepository;
 
 	@Override
 	public Usuario salvar(Usuario usuario) {
@@ -37,8 +49,20 @@ public class UsuarioServiceImpl implements UsuarioService {
 	@Override
 	public Usuario salvarUsuario(Usuario usuario) {
 		usuario = salvar(usuario);
+		var papelUsuario = criarPapelUsuario(usuario);
+		papelUsuarioRepository.adicionar(papelUsuario);
 		usuarioEventPublisher.publishUsuarioEvent(converterUsuarioParaUsuarioEventDto(usuario), TipoAcao.SALVAR);
 		return usuario;
+	}
+
+	private PapelUsuario criarPapelUsuario(Usuario usuario) {
+		var papel = papelRepository.findByNome(Constantes.PAPEL_USUARIO);
+		var papelUsuario = new PapelUsuario();
+		papelUsuario.setUsuario(usuario);
+		papelUsuario.setPapel(papel.get());
+		papelUsuario.setFlAtivo(Boolean.TRUE);
+		papelUsuario.setDtCadastro(LocalDateTime.now(ZoneId.of("UTC")));
+		return papelUsuario;
 	}
 
 	@Override
@@ -87,6 +111,12 @@ public class UsuarioServiceImpl implements UsuarioService {
 	@Transactional(readOnly = true)
 	public boolean existsByCdUsuario(UUID cdUsuario) {
 		return usuarioRepository.existsByCdUsuario(cdUsuario);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Optional<Usuario> findByLogin(String login) {
+		return usuarioRepository.findByLogin(login);
 	}
 
 }

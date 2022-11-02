@@ -17,6 +17,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -57,6 +59,9 @@ public class UsuarioController {
 	@Autowired
 	private PapelUsuarioService papelUsuarioService;
 
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+
 	@GetMapping
 	public ResponseEntity<Page<Usuario>> listar(SpecificationTemplate.UsuarioSpec usuarioSpec,
 			@PageableDefault(page = 0, size = 10, sort = "dtCadastro", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -70,6 +75,7 @@ public class UsuarioController {
 		return ResponseEntity.status(HttpStatus.OK).body(usuarioPage);
 	}
 
+	@PreAuthorize("hasAnyRole('USUARIO')")
 	@GetMapping("/{cdUsuario}")
 	public ResponseEntity<Object> buscar(@PathVariable(value = "cdUsuario") UUID cdUsuario) {
 		log.debug("Buscar usuário: {}", cdUsuario);
@@ -94,6 +100,7 @@ public class UsuarioController {
 			return ResponseEntity.status(HttpStatus.OK).body("Esse email já existe.");
 		} else {
 			var usuario = new Usuario();
+			usuarioDto.setSenha(passwordEncoder.encode(usuarioDto.getSenha()));
 			BeanUtils.copyProperties(usuarioDto, usuario);
 			usuario.setStatusUsuario(StatusUsuario.ATIVO);
 			usuario.setDtCadastro(LocalDateTime.now(ZoneId.of("UTC")));
@@ -138,7 +145,7 @@ public class UsuarioController {
 			return ResponseEntity.status(HttpStatus.CONFLICT).body("A senha atual está incorreta.");
 		} else {
 			var usuario = usuarioOptional.get();
-			usuario.setSenha(usuarioDto.getNovaSenha());
+			usuario.setSenha(passwordEncoder.encode(usuarioDto.getNovaSenha()));
 			usuario.setDtAtualizacao(LocalDateTime.now(ZoneId.of("UTC")));
 			usuarioService.atualizarSenha(usuario);
 			log.debug("A senha foi atualizada com sucesso: {}", usuario.getCdUsuario());
