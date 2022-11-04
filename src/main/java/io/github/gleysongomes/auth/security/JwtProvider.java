@@ -80,7 +80,7 @@ public class JwtProvider {
 		return new UsernamePasswordAuthenticationToken(claims.getSubject(), "", papeis);
 	}
 
-	public boolean validar(String jwt) {
+	public boolean valido(String jwt) {
 		try {
 			Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(jwt);
 			return true;
@@ -96,6 +96,11 @@ public class JwtProvider {
 			return auth.substring(7);
 		}
 		return null;
+	}
+
+	public UUID getJwtId(String jwt) {
+		String id = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(jwt).getBody().getId();
+		return UUID.fromString(id);
 	}
 
 }
