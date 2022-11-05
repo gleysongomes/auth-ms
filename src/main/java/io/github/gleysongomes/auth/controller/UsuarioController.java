@@ -62,6 +62,7 @@ public class UsuarioController {
 	@Autowired
 	private PasswordEncoder passwordEncoder;
 
+	@PreAuthorize("hasAnyRole('ADMIN')")
 	@GetMapping
 	public ResponseEntity<Page<Usuario>> listar(SpecificationTemplate.UsuarioSpec usuarioSpec,
 			@PageableDefault(page = 0, size = 10, sort = "dtCadastro", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -110,6 +111,7 @@ public class UsuarioController {
 		}
 	}
 
+	@PreAuthorize("hasAnyRole('USUARIO')")
 	@PutMapping("/{cdUsuario}")
 	public ResponseEntity<Object> atualizar(@PathVariable(value = "cdUsuario") UUID cdUsuario,
 			@RequestBody @Validated(UsuarioDto.UsuarioView.UsuarioPut.class) @JsonView(UsuarioDto.UsuarioView.UsuarioPut.class) UsuarioDto usuarioDto) {
@@ -132,6 +134,7 @@ public class UsuarioController {
 		}
 	}
 
+	@PreAuthorize("hasAnyRole('USUARIO')")
 	@PutMapping("/{cdUsuario}/senha")
 	public ResponseEntity<Object> atualizarSenha(@PathVariable(value = "cdUsuario") UUID cdUsuario,
 			@RequestBody @Validated(UsuarioDto.UsuarioView.SenhaPut.class) @JsonView(UsuarioDto.UsuarioView.SenhaPut.class) UsuarioDto usuarioDto) {
@@ -153,6 +156,7 @@ public class UsuarioController {
 		}
 	}
 
+	@PreAuthorize("hasAnyRole('ADMIN')")
 	@DeleteMapping("/{cdUsuario}")
 	public ResponseEntity<Object> excluir(@PathVariable(value = "cdUsuario") UUID cdUsuario) {
 		log.debug("Excluir usuário: {}", cdUsuario);
@@ -167,6 +171,7 @@ public class UsuarioController {
 		}
 	}
 
+	@PreAuthorize("hasAnyRole('ADMIN')")
 	@PostMapping("/{cdUsuario}/papeis")
 	public ResponseEntity<Object> vincular(@PathVariable(value = "cdUsuario") UUID cdUsuario,
 			@RequestBody @Validated(PapelUsuarioDto.PapelUsuarioView.PapelUsuarioPost.class) @JsonView(PapelUsuarioDto.PapelUsuarioView.PapelUsuarioPost.class) PapelUsuarioDto papelUsuarioDto) {
@@ -196,6 +201,7 @@ public class UsuarioController {
 		}
 	}
 
+	@PreAuthorize("hasAnyRole('ADMIN')")
 	@PutMapping("/{cdUsuario}/papeis")
 	public ResponseEntity<Object> atualizarVinculo(@PathVariable(value = "cdUsuario") UUID cdUsuario,
 			@RequestBody @Validated(PapelUsuarioDto.PapelUsuarioView.PapelUsuarioPut.class) @JsonView(PapelUsuarioDto.PapelUsuarioView.PapelUsuarioPut.class) PapelUsuarioDto papelUsuarioDto) {
@@ -226,6 +232,7 @@ public class UsuarioController {
 		}
 	}
 
+	@PreAuthorize("hasAnyRole('ADMIN')")
 	@DeleteMapping("/{cdUsuario}/papeis/{cdPapel}")
 	public ResponseEntity<Object> excluirVinculo(@PathVariable(value = "cdUsuario") UUID cdUsuario,
 			@PathVariable(value = "cdPapel") UUID cdPapel) {
@@ -251,6 +258,7 @@ public class UsuarioController {
 		}
 	}
 
+	@PreAuthorize("hasAnyRole('ADMIN')")
 	@GetMapping("/{cdUsuario}/papeis/{cdPapel}")
 	public ResponseEntity<Object> buscarVinculo(@PathVariable(value = "cdUsuario") UUID cdUsuario,
 			@PathVariable(value = "cdPapel") UUID cdPapel) {

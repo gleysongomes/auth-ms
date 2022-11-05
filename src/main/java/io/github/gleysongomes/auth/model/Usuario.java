@@ -70,7 +70,7 @@ public class Usuario extends RepresentationModel<Usuario> implements Serializabl
 	@Enumerated(EnumType.STRING)
 	private StatusUsuario statusUsuario;
 
-	@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "tb_papel_usuario", joinColumns = @JoinColumn(name = "cd_usuario"), inverseJoinColumns = @JoinColumn(name = "cd_papel"))
 	private Set<Papel> papeis = new HashSet<>();

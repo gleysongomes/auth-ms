@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,11 +25,13 @@ public class JwtUsuarioController {
 	@Autowired
 	private JwtUsuarioService jwtUsuarioService;
 
+	@PreAuthorize("hasAnyRole('ADMIN')")
 	@GetMapping("/{login}")
 	public ResponseEntity<List<JwtUsuarioDto>> listarPorLogin(@PathVariable(value = "login") String login) {
 		return ResponseEntity.status(HttpStatus.OK).body(jwtUsuarioService.listarPorLogin(login));
 	}
 
+	@PreAuthorize("hasAnyRole('ADMIN')")
 	@DeleteMapping("/{login}")
 	public ResponseEntity<Object> excluir(@PathVariable(value = "login") String login) {
 		if (!jwtUsuarioService.existsByLogin(login)) {

@@ -2,6 +2,8 @@ package io.github.gleysongomes.auth.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -53,6 +55,13 @@ public class WebSecurityConfig {
 	@Bean
 	public JwtFilter jwtFilter() {
 		return new JwtFilter();
+	}
+
+	@Bean
+	public RoleHierarchy roleHierarchy() {
+		RoleHierarchyImpl roleHierarchyImpl = new RoleHierarchyImpl();
+		roleHierarchyImpl.setHierarchy("ROLE_ADMIN > ROLE_USUARIO");
+		return roleHierarchyImpl;
 	}
 
 }

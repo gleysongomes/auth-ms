@@ -74,7 +74,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 	@Override
 	@Transactional(readOnly = true)
 	public Optional<Usuario> buscar(UUID cdUsuario) {
-		return usuarioRepository.findByCdUsuario(cdUsuario);
+		return usuarioRepository.findById(cdUsuario);
 	}
 
 	@Override

@@ -17,6 +17,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -45,6 +46,7 @@ public class PapelController {
 	@Autowired
 	private PapelService papelService;
 
+	@PreAuthorize("hasAnyRole('ADMIN')")
 	@GetMapping
 	public ResponseEntity<Page<Papel>> listar(SpecificationTemplate.PapelSpec papelSpec,
 			@PageableDefault(page = 0, size = 10, sort = "dtCadastro", direction = Sort.Direction.DESC) Pageable pageable) {
@@ -58,6 +60,7 @@ public class PapelController {
 		return ResponseEntity.status(HttpStatus.OK).body(papelPage);
 	}
 
+	@PreAuthorize("hasAnyRole('ADMIN')")
 	@GetMapping("/{cdPapel}")
 	public ResponseEntity<Object> buscar(@PathVariable(value = "cdPapel") UUID cdPapel) {
 		log.debug("Buscar papel: {}", cdPapel);
@@ -70,6 +73,7 @@ public class PapelController {
 		}
 	}
 
+	@PreAuthorize("hasAnyRole('ADMIN')")
 	@PostMapping
 	public ResponseEntity<Object> adicionar(
 			@RequestBody @Validated(PapelDto.PapelView.PapelPost.class) @JsonView(PapelDto.PapelView.PapelPost.class) PapelDto papelDto) {
@@ -88,6 +92,7 @@ public class PapelController {
 		}
 	}
 
+	@PreAuthorize("hasAnyRole('ADMIN')")
 	@PutMapping("/{cdPapel}")
 	public ResponseEntity<Object> atualizar(@PathVariable(value = "cdPapel") UUID cdPapel,
 			@RequestBody @Validated(PapelDto.PapelView.PapelPut.class) @JsonView(PapelDto.PapelView.PapelPut.class) PapelDto papelDto) {
@@ -111,6 +116,7 @@ public class PapelController {
 		}
 	}
 
+	@PreAuthorize("hasAnyRole('ADMIN')")
 	@DeleteMapping("/{cdPapel}")
 	public ResponseEntity<Object> excluir(@PathVariable(value = "cdPapel") UUID cdPapel) {
 		log.debug("Excluir papel: {}", cdPapel);
