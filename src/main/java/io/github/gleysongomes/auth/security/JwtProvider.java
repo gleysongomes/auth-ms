@@ -1,11 +1,19 @@
 package io.github.gleysongomes.auth.security;
 
+import java.nio.file.Files;
 import java.security.Key;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -15,19 +23,23 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.rsa.crypto.KeyStoreKeyFactory;
 import org.springframework.stereotype.Component;
+
+import com.nimbusds.jwt.JWTParser;
 
 import io.github.gleysongomes.auth.dto.LoginDto;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -37,7 +49,11 @@ public class JwtProvider {
 	@Autowired
 	private AuthenticationManager authenticationManager;
 
-	private Key key;
+	private PublicKey publicKey;
+
+	private PublicKey publicKeyFile;
+
+	private PrivateKey privateKey;
 
 	@Value("${app.auth.senha-jwt}")
 	private String senhaJwt;
@@ -45,9 +61,23 @@ public class JwtProvider {
 	@Value("${app.auth.expiracao-jwt-minutos}")
 	private Integer expiracaoJwtMinutos;
 
+	@Value("${app.auth.key-alias}")
+	private String keyAlias;
+
+	@Value("${app.auth.key-store}")
+	private String keyStore;
+
+	@Value("${app.auth.key-store-password}")
+	private String keyStorePassword;
+
 	@PostConstruct
 	public void init() {
-		key = Keys.hmacShaKeyFor(senhaJwt.getBytes());
+		KeyStoreKeyFactory keyStoreKeyFactory = new KeyStoreKeyFactory(new ClassPathResource(keyStore),
+				keyStorePassword.toCharArray());
+		KeyPair kp = keyStoreKeyFactory.getKeyPair(keyAlias);
+		publicKey = kp.getPublic();
+		publicKeyFile = getPublicKeyFile();
+		privateKey = kp.getPrivate();
 	}
 
 	public String gerar(LoginDto loginDto) {
@@ -62,14 +92,15 @@ public class JwtProvider {
 				.setId(UUID.randomUUID().toString())
 				.setSubject(authentication.getName())
 				.claim("papeis", papeis)
+				.claim("public_key_file", "N")
 				.setIssuedAt(new Date())
 				.setExpiration(Date.from(Instant.now().plus(expiracaoJwtMinutos, ChronoUnit.MINUTES)))
-				.signWith(key, SignatureAlgorithm.HS512).compact();
+				.signWith(privateKey, SignatureAlgorithm.RS512).compact();
 	}
 
 	public Authentication criarAutenticacao(String jwt) {
 		Claims claims = Jwts.parserBuilder()
-				.setSigningKey(key)
+				.setSigningKey(publicKey)
 				.build()
 				.parseClaimsJws(jwt)
 				.getBody();
@@ -82,7 +113,7 @@ public class JwtProvider {
 
 	public boolean valido(String jwt) {
 		try {
-			Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(jwt);
+			Jwts.parserBuilder().setSigningKey(getPublicKey(jwt)).build().parseClaimsJws(jwt);
 			return true;
 		} catch (Exception e) {
 			log.debug("Erro ao validar token: {}", e);
@@ -99,8 +130,37 @@ public class JwtProvider {
 	}
 
 	public UUID getJwtId(String jwt) {
-		String id = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(jwt).getBody().getId();
+		String id = Jwts.parserBuilder().setSigningKey(getPublicKey(jwt)).build().parseClaimsJws(jwt).getBody().getId();
 		return UUID.fromString(id);
+	}
+
+	private PublicKey getPublicKeyFile() {
+		try {
+			Resource resource = new ClassPathResource("auth-jwt.public");
+			byte[] keyBytes = Files.readAllBytes(resource.getFile().toPath());
+			byte[] encoded = Base64.getDecoder().decode(new String(keyBytes));
+			X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encoded);
+			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+			PublicKey publicKey = keyFactory.generatePublic(keySpec);
+			return publicKey;
+		} catch (Exception e) {
+			log.debug("Erro ao ler chave pública: {}", e);
+			return null;
+		}
+	}
+
+	private Key getPublicKey(String jwt) {
+		try {
+			Map<String, Object> claims = JWTParser.parse(jwt).getJWTClaimsSet().getClaims();
+			Object flPublicKeyFile = claims.get("public_key_file");
+			if ("S".equals(flPublicKeyFile)) {
+				return publicKeyFile;
+			}
+			return publicKey;
+		} catch (Exception e) {
+			log.debug("Erro ao ler claim do token: {}", e);
+			return null;
+		}
 	}
 
 }
