@@ -51,7 +51,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 		usuario = salvar(usuario);
 		var papelUsuario = criarPapelUsuario(usuario);
 		papelUsuarioRepository.adicionar(papelUsuario);
-		usuarioEventPublisher.publishUsuarioEvent(converterUsuarioParaUsuarioEventDto(usuario), TipoAcao.SALVAR);
+		usuarioEventPublisher.publishUsuarioEvent(converterUsuarioParaUsuarioEventDto(usuario), TipoAcao.ADICIONAR);
 		return usuario;
 	}
 
@@ -63,6 +63,13 @@ public class UsuarioServiceImpl implements UsuarioService {
 		papelUsuario.setFlAtivo(Boolean.TRUE);
 		papelUsuario.setDtCadastro(LocalDateTime.now(ZoneId.of("UTC")));
 		return papelUsuario;
+	}
+
+	@Override
+	public Usuario atualizarUsuario(Usuario usuario) {
+		usuario = salvar(usuario);
+		usuarioEventPublisher.publishUsuarioEvent(converterUsuarioParaUsuarioEventDto(usuario), TipoAcao.ATUALIZAR);
+		return usuario;
 	}
 
 	@Override

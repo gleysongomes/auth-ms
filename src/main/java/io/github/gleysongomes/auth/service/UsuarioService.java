@@ -15,6 +15,8 @@ public interface UsuarioService {
 
 	Usuario salvarUsuario(Usuario usuario);
 
+	Usuario atualizarUsuario(Usuario usuario);
+
 	void excluir(Usuario usuario);
 
 	Optional<Usuario> buscar(UUID cdUsuario);

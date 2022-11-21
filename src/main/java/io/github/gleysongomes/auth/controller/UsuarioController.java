@@ -128,7 +128,7 @@ public class UsuarioController {
 			var usuario = usuarioOptional.get();
 			usuario.setNome(usuarioDto.getNome());
 			usuario.setDtAtualizacao(LocalDateTime.now(ZoneId.of("UTC")));
-			usuario = usuarioService.salvarUsuario(usuario);
+			usuario = usuarioService.atualizarUsuario(usuario);
 			log.debug("Usuário atualizado com sucesso: {}", cdUsuario);
 			return ResponseEntity.status(HttpStatus.OK).body(usuario);
 		}
